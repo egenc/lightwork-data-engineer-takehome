@@ -115,64 +115,137 @@ This stack is intentionally aligned with the role requirements and startup const
 ## Architecture Overview
 
 ```mermaid
-flowchart LR
-  subgraph Sources
-    A[PMS API Legacy]
-    B[PMS API Modern]
-    C[User Messages]
-    D[Audio Streams]
-    E[Call Transcripts]
+%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
+flowchart TB
+  subgraph SourceSystems[Source Systems]
+    pmsLegacy[PMS Legacy API]
+    pmsModern[PMS Modern API]
+    userMessages[User Messages]
+    audioStreams[Audio Streams]
+    callTranscripts[Call Transcript Events]
   end
 
-  subgraph Ingestion
-    F[Connector Workers]
-    G[Webhook Gateway]
-    H[Stream Broker]
+  subgraph IngestionLayer[Ingestion Layer]
+    connectorWorkers[Connector Workers]
+    webhookGateway[Webhook Gateway]
+    streamBroker[Kafka Stream Broker]
   end
 
-  subgraph Processing
-    I[Normalizer & Dedup]
-    J[PII Guard + Policy]
-    K[AI Enrichment Workers]
+  subgraph BronzeLayer[Bronze Layer - Raw and Immutable]
+    rawObjectStorage[(Object Storage Raw Zone)]
+    rawEventTopics[(Raw Event Topics)]
   end
 
-  subgraph Storage
-    L[(PostgreSQL)]
-    M[(Object Storage)]
-    N[(OpenSearch)]
-    O[(Vector Store optional)]
+  subgraph SilverLayer[Silver Layer - Cleaned and Conformed]
+    normalizerDedup[Normalizer and Dedup Service]
+    piiPolicy[PII Guard and Policy Filters]
+    canonicalPostgres[(PostgreSQL Canonical Tables)]
+    curatedSearch[(OpenSearch Curated Index)]
   end
 
-  subgraph Serving
-    P[Agent Runtime]
-    Q[Ops Dashboard]
-    R[Analytics/BI]
+  subgraph GoldLayer[Gold Layer - Serving and Intelligence]
+    contextViews[(Feature and Context Views)]
+    vectorStore[(Vector Store - Optional)]
+    aiWorkers[AI Enrichment Workers]
   end
 
-  A --> F
-  B --> F
-  C --> G
-  D --> G
-  E --> G
+  subgraph ProductServing[Product and Operations Serving]
+    agentRuntime[Agent Runtime]
+    opsDashboard[Ops Dashboard]
+    analyticsBI[Analytics and BI]
+  end
 
-  G --> H
-  F --> H
+  pmsLegacy --> connectorWorkers
+  pmsModern --> connectorWorkers
+  userMessages --> webhookGateway
+  audioStreams --> webhookGateway
+  callTranscripts --> webhookGateway
 
-  H --> I
-  I --> J
-  J --> L
-  J --> M
-  J --> N
-  J --> O
+  connectorWorkers --> streamBroker
+  webhookGateway --> streamBroker
 
-  L --> P
-  N --> P
-  O --> P
-  M --> P
+  connectorWorkers --> rawObjectStorage
+  webhookGateway --> rawObjectStorage
+  streamBroker --> rawEventTopics
 
-  L --> Q
-  H --> Q
-  L --> R
+  rawObjectStorage --> normalizerDedup
+  rawEventTopics --> normalizerDedup
+  normalizerDedup --> piiPolicy
+  piiPolicy --> canonicalPostgres
+  piiPolicy --> curatedSearch
+
+  canonicalPostgres --> contextViews
+  curatedSearch --> contextViews
+  contextViews --> aiWorkers
+  contextViews --> vectorStore
+
+  aiWorkers --> agentRuntime
+  canonicalPostgres --> agentRuntime
+  curatedSearch --> agentRuntime
+  vectorStore --> agentRuntime
+
+  canonicalPostgres --> opsDashboard
+  streamBroker --> opsDashboard
+  contextViews --> analyticsBI
+```
+
+## Orchestration and Runtime Architecture (Airflow + Kubernetes)
+
+```mermaid
+%%{init: {'themeVariables': {'fontSize': '20px'}}}%%
+flowchart TB
+  subgraph ControlPlane[Control Plane]
+    airflow[Airflow Scheduler and DAGs]
+  end
+
+  subgraph KubernetesCluster[Kubernetes Cluster]
+    connectorDeploy[Connector Worker Deployment]
+    streamConsumerDeploy[Stream Consumer Deployment]
+    aiWorkerDeploy[AI Enrichment Worker Deployment]
+    hpa[Horizontal Pod Autoscaler]
+    cronJobs[Kubernetes CronJobs]
+  end
+
+  subgraph DataServices[Managed Data Services]
+    kafka[Kafka]
+    postgres[PostgreSQL]
+    opensearch[OpenSearch]
+    redis[Redis Optional]
+    objectStore[Object Storage]
+  end
+
+  subgraph InputsAndOps[External Inputs and Monitoring]
+    pmsApis[PMS APIs]
+    webhookInput[Webhook and Realtime Input]
+    observability[OpenTelemetry + Prometheus + Grafana]
+  end
+
+  airflow --> cronJobs
+  airflow --> connectorDeploy
+  airflow --> streamConsumerDeploy
+
+  pmsApis --> connectorDeploy
+  webhookInput --> streamConsumerDeploy
+
+  connectorDeploy --> kafka
+  connectorDeploy --> objectStore
+  streamConsumerDeploy --> kafka
+  streamConsumerDeploy --> postgres
+  streamConsumerDeploy --> opensearch
+  streamConsumerDeploy --> redis
+  aiWorkerDeploy --> postgres
+  aiWorkerDeploy --> opensearch
+  aiWorkerDeploy --> redis
+
+  kafka --> hpa
+  hpa --> connectorDeploy
+  hpa --> streamConsumerDeploy
+  hpa --> aiWorkerDeploy
+
+  connectorDeploy --> observability
+  streamConsumerDeploy --> observability
+  aiWorkerDeploy --> observability
+  airflow --> observability
 ```
 
 ## Why This Fits a Startup
