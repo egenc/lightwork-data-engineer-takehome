@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LightWork Data Engineer Take-Home Submission</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      color: #1f2937;
+      line-height: 1.45;
+      font-size: 11pt;
+      background: #fff;
+    }
+    .page {
+      page-break-after: always;
+      min-height: calc(297mm - 36mm);
+      display: flex;
+      flex-direction: column;
+    }
+    .page:last-child { page-break-after: auto; }
+    h1, h2, h3 { margin: 0 0 10px; color: #0f172a; }
+    h1 { font-size: 24pt; margin-top: 6px; }
+    h2 { font-size: 16pt; margin-top: 8px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px; }
+    h3 { font-size: 12.5pt; margin-top: 10px; }
+    p { margin: 7px 0; }
+    ul { margin: 6px 0 10px 20px; }
+    li { margin: 4px 0; }
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 14px 0;
+      padding: 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+    .callout {
+      border-left: 4px solid #2563eb;
+      background: #eff6ff;
+      padding: 10px 12px;
+      margin: 12px 0;
+      border-radius: 6px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+    .footer {
+      margin-top: auto;
+      padding-top: 10px;
+      font-size: 9.5pt;
+      color: #475569;
+      border-top: 1px solid #e5e7eb;
+    }
+    a { color: #1d4ed8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <h1>LightWork AI - Data Engineer Take-Home Submission</h1>
+    <p>
+      This document summarizes my proposed data architecture for LightWork AI's platform,
+      designed to support operational automation, real-time processing, and agentic AI.
+    </p>
+
+    <div class="meta">
+      <div><strong>Candidate:</strong> Erdal Genc</div>
+      <div><strong>Date:</strong> 2026-08-15</div>
+      <div><strong>Role:</strong> Lead Data Engineer</div>
+      <div><strong>Market Context:</strong> UK Property Operations</div>
+    </div>
+
+    <div class="callout">
+      <strong>Repository Link:</strong>
+      <a href="https://github.com/egenc/lightwork-data-engineer-takehome">https://github.com/egenc/lightwork-data-engineer-takehome</a>
+    </div>
+
+    <h2>1) Problem and Design Goals</h2>
+    <p>LightWork needs one reliable platform that can ingest data from many PMS systems, process live communication events, and provide safe, high-quality context to AI agents.</p>
+    <h3>Primary goals</h3>
+    <ul>
+      <li>Ingest legacy and modern PMS data without data loss</li>
+      <li>Support both batch and real-time workflows</li>
+      <li>Protect tenant PII and provide compliance-ready controls</li>
+      <li>Scale gradually with clear cost and latency thresholds</li>
+    </ul>
+
+    <h3>Guiding principles</h3>
+    <ul>
+      <li>Use proven tools first; add complexity only when required</li>
+      <li>Build for replay, idempotency, and observability from day one</li>
+      <li>Keep architecture understandable for both engineers and operators</li>
+    </ul>
+
+    <div class="footer">Page 1 of 4</div>
+  </section>
+
+  <section class="page">
+    <h2>2) Architecture for PMS Ingestion and Storage</h2>
+    <h3>Ingestion approach</h3>
+    <ul>
+      <li><strong>Connector workers (Python):</strong> one adapter per PMS provider</li>
+      <li><strong>Legacy APIs:</strong> polling + checkpoints + retries + backoff</li>
+      <li><strong>Modern APIs:</strong> webhooks + signature checks + periodic reconciliation</li>
+      <li><strong>Transport:</strong> Kafka topics for durable, replayable event flow</li>
+    </ul>
+
+    <h3>Medallion data model</h3>
+    <div class="two-col">
+      <div class="card">
+        <h3>Bronze (Raw)</h3>
+        <p>Immutable source payloads in object storage and raw event topics. This layer is used for auditing and replay.</p>
+      </div>
+      <div class="card">
+        <h3>Silver (Conformed)</h3>
+        <p>Normalized records with dedupe and policy checks. Canonical tenancy entities live in PostgreSQL; searchable text is indexed in OpenSearch.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <h3>Gold (Serving)</h3>
+      <p>AI-ready context views combine structured and unstructured data for agent decisions, dashboards, and analytics.</p>
+    </div>
+
+    <h3>Data stores and purpose</h3>
+    <ul>
+      <li><strong>PostgreSQL:</strong> source of truth for tenants, tenancies, and actions</li>
+      <li><strong>OpenSearch:</strong> low-latency transcript/message retrieval</li>
+      <li><strong>Object storage:</strong> low-cost raw archives (audio, transcripts, payloads)</li>
+      <li><strong>Redis (optional):</strong> cache, idempotency windows, short-lived coordination state</li>
+    </ul>
+
+    <div class="footer">Page 2 of 4</div>
+  </section>
+
+  <section class="page">
+    <h2>3) Real-Time Processing and AI Orchestration</h2>
+    <h3>Live data flow</h3>
+    <ul>
+      <li>Messages/calls/webhooks enter a realtime ingest API</li>
+      <li>Events are published to Kafka realtime topics</li>
+      <li>Stream processors enrich events with tenant and conversation context</li>
+      <li>AI workers classify intent, urgency, and next-best action</li>
+      <li>Action engine emits recommendations or triggers approved workflows</li>
+    </ul>
+
+    <h3>Airflow + Kubernetes responsibilities</h3>
+    <div class="two-col">
+      <div class="card">
+        <h3>Airflow</h3>
+        <ul>
+          <li>Schedules PMS sync and reconciliation jobs</li>
+          <li>Runs controlled backfills</li>
+          <li>Provides operational DAG visibility</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Kubernetes</h3>
+        <ul>
+          <li>Runs connector, consumer, and AI worker deployments</li>
+          <li>Autoscaling based on lag and latency</li>
+          <li>Isolates noisy workloads by namespace or pool</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Performance targets</h3>
+    <ul>
+      <li>P95 ingest-to-classification latency under 3 seconds</li>
+      <li>P95 ingest-to-recommendation latency under 8 seconds</li>
+      <li>End-to-end observability across ingest, transform, and AI actions</li>
+    </ul>
+
+    <div class="footer">Page 3 of 4</div>
+  </section>
+
+  <section class="page">
+    <h2>4) Compliance, Benchmarking, and Scale Plan</h2>
+    <h3>Compliance and governance (current offering)</h3>
+    <ul>
+      <li>Encryption in transit and at rest</li>
+      <li>Tenant-scoped access patterns and auditability</li>
+      <li>PII-aware prompt handling with masking rules</li>
+      <li>Retention policy by data class (events, transcripts, raw media)</li>
+    </ul>
+
+    <h3>AI quality and safety benchmarking</h3>
+    <ul>
+      <li><strong>Offline:</strong> precision/recall/F1, ranking quality, safety violation rate</li>
+      <li><strong>Online:</strong> shadow mode, A/B tests, resolution and escalation impact</li>
+      <li><strong>Operations:</strong> latency, model cost per resolved case, drift indicators</li>
+    </ul>
+
+    <h3>Scale interventions (when to act)</h3>
+    <ul>
+      <li>Add consumers when queue lag is sustained beyond threshold</li>
+      <li>Add Redis when repeated hot reads impact user-facing latency</li>
+      <li>Partition high-volume tables and move cold data to cheaper storage</li>
+      <li>Adopt dedicated vector infrastructure when semantic retrieval latency grows</li>
+    </ul>
+
+    <div class="callout">
+      <strong>Implementation posture:</strong> Startup-practical by default, production-safe by design,
+      and explicitly measurable through latency, quality, and cost KPIs.
+    </div>
+
+    <div class="footer">Page 4 of 4</div>
+  </section>
+</body>
+</html>
