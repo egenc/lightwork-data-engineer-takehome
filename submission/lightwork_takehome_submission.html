@@ -32,16 +32,6 @@
     p { margin: 7px 0; }
     ul { margin: 6px 0 10px 20px; }
     li { margin: 4px 0; }
-    .meta {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 14px 0;
-      padding: 10px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      background: #f8fafc;
-    }
     .callout {
       border-left: 4px solid #2563eb;
       background: #eff6ff;
@@ -78,11 +68,25 @@
       designed to support operational automation, real-time processing, and agentic AI.
     </p>
 
-    <div class="meta">
-      <div><strong>Candidate:</strong> Erdal Genc</div>
-      <div><strong>Date:</strong> 2026-08-15</div>
-      <div><strong>Role:</strong> Lead Data Engineer</div>
-      <div><strong>Market Context:</strong> UK Property Operations</div>
+    <div class="two-col" style="margin-top:10px;">
+      <div class="card">
+        <h3>What this submission covers</h3>
+        <ul>
+          <li>PMS ingestion for legacy and modern API providers</li>
+          <li>Real-time processing for messages, calls, and transcripts</li>
+          <li>AI context assembly, action orchestration, and benchmarking</li>
+          <li>Scale strategy with measurable intervention thresholds</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Review focus</h3>
+        <ul>
+          <li>Reliability: idempotency, replay, and auditability</li>
+          <li>Security: tenant isolation and PII-aware processing</li>
+          <li>Practicality: startup-ready stack and phased rollout</li>
+          <li>Performance: latency, quality, and cost as first-class metrics</li>
+        </ul>
+      </div>
     </div>
 
     <div class="callout">
