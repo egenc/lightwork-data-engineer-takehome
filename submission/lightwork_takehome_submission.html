@@ -44,6 +44,12 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+    .compact-list {
+      margin: 4px 0 8px 14px;
+    }
+    .compact-list li {
+      margin: 2px 0;
+    }
     .card {
       border: 1px solid #e5e7eb;
       border-radius: 8px;
@@ -71,7 +77,7 @@
     <div class="two-col" style="margin-top:10px;">
       <div class="card">
         <h3>What this submission covers</h3>
-        <ul>
+        <ul class="compact-list">
           <li>How to bring in PMS data from old and new systems</li>
           <li>How to process messages, calls, and transcripts in real time</li>
           <li>How AI can use this data safely and usefully</li>
@@ -80,7 +86,7 @@
       </div>
       <div class="card">
         <h3>Review focus</h3>
-        <ul>
+        <ul class="compact-list">
           <li>Reliability: no silent data loss and safe retries</li>
           <li>Security: protect tenant data and keep access controlled</li>
           <li>Practicality: use tools a startup can run with a small team</li>
@@ -100,7 +106,7 @@
       <strong>Why this matters:</strong> If the platform is slow, messy, or hard to trust, the AI layer will also be slow, messy, and hard to trust.
     </div>
     <h3>Primary goals</h3>
-    <ul>
+    <ul class="compact-list">
       <li>Bring in PMS data from both legacy and modern systems without losing records</li>
       <li>Support both scheduled data syncs and live event processing</li>
       <li>Protect tenant data and support compliance needs</li>
@@ -108,7 +114,7 @@
     </ul>
 
     <h3>Guiding principles</h3>
-    <ul>
+    <ul class="compact-list">
       <li>Start with proven tools and only add complexity when it solves a real problem</li>
       <li>Make replay, safe retries, and monitoring part of the design from the start</li>
       <li>Keep the system easy to understand for both engineers and operations teams</li>
