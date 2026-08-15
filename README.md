@@ -1,6 +1,6 @@
 # Lightwork Data Engineer Takeaway
 
-Author: Your Name  
+Author: egenc  
 Role target: Data Engineer / Data Architect  
 Date: 2026-08-15
 
