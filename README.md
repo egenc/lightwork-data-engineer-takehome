@@ -1,7 +1,7 @@
 # Lightwork Data Engineer Takeaway
 
 Author: egenc  
-Role target: Data Engineer / Data Architect  
+Role target: Lead Data Engineer / Data Architect  
 Date: 2026-08-15
 
 ## Purpose
