@@ -1,9 +1,5 @@
 # Lightwork Data Engineer Takeaway
 
-Author: egenc  
-Role target: Lead Data Engineer / Data Architect  
-Date: 2026-08-15
-
 ## Purpose
 
 This repository presents an end-to-end, startup-conscious data platform design for Lightwork.
