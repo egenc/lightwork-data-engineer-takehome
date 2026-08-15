@@ -64,27 +64,27 @@
   <section class="page">
     <h1>LightWork AI - Data Engineer Take-Home Submission</h1>
     <p>
-      This document summarizes my proposed data architecture for LightWork AI's platform,
-      designed to support operational automation, real-time processing, and agentic AI.
+      This document explains how I would build a simple, reliable, and scalable data platform
+      for LightWork AI. The aim is to support daily operations, live communication flows, and AI-driven actions.
     </p>
 
     <div class="two-col" style="margin-top:10px;">
       <div class="card">
         <h3>What this submission covers</h3>
         <ul>
-          <li>PMS ingestion for legacy and modern API providers</li>
-          <li>Real-time processing for messages, calls, and transcripts</li>
-          <li>AI context assembly, action orchestration, and benchmarking</li>
-          <li>Scale strategy with measurable intervention thresholds</li>
+          <li>How to bring in PMS data from old and new systems</li>
+          <li>How to process messages, calls, and transcripts in real time</li>
+          <li>How AI can use this data safely and usefully</li>
+          <li>How the platform can grow without becoming too expensive</li>
         </ul>
       </div>
       <div class="card">
         <h3>Review focus</h3>
         <ul>
-          <li>Reliability: idempotency, replay, and auditability</li>
-          <li>Security: tenant isolation and PII-aware processing</li>
-          <li>Practicality: startup-ready stack and phased rollout</li>
-          <li>Performance: latency, quality, and cost as first-class metrics</li>
+          <li>Reliability: no silent data loss and safe retries</li>
+          <li>Security: protect tenant data and keep access controlled</li>
+          <li>Practicality: use tools a startup can run with a small team</li>
+          <li>Performance: watch speed, quality, and cost together</li>
         </ul>
       </div>
     </div>
@@ -95,20 +95,23 @@
     </div>
 
     <h2>1) Problem and Design Goals</h2>
-    <p>LightWork needs one reliable platform that can ingest data from many PMS systems, process live communication events, and provide safe, high-quality context to AI agents.</p>
+    <p>LightWork needs one platform that can collect data from many PMS systems, handle live events, and give AI tools the right context to take useful action.</p>
+    <div class="callout">
+      <strong>Why this matters:</strong> If the platform is slow, messy, or hard to trust, the AI layer will also be slow, messy, and hard to trust.
+    </div>
     <h3>Primary goals</h3>
     <ul>
-      <li>Ingest legacy and modern PMS data without data loss</li>
-      <li>Support both batch and real-time workflows</li>
-      <li>Protect tenant PII and provide compliance-ready controls</li>
-      <li>Scale gradually with clear cost and latency thresholds</li>
+      <li>Bring in PMS data from both legacy and modern systems without losing records</li>
+      <li>Support both scheduled data syncs and live event processing</li>
+      <li>Protect tenant data and support compliance needs</li>
+      <li>Scale step by step with clear limits for cost and speed</li>
     </ul>
 
     <h3>Guiding principles</h3>
     <ul>
-      <li>Use proven tools first; add complexity only when required</li>
-      <li>Build for replay, idempotency, and observability from day one</li>
-      <li>Keep architecture understandable for both engineers and operators</li>
+      <li>Start with proven tools and only add complexity when it solves a real problem</li>
+      <li>Make replay, safe retries, and monitoring part of the design from the start</li>
+      <li>Keep the system easy to understand for both engineers and operations teams</li>
     </ul>
 
     <div class="footer">Page 1 of 4</div>
@@ -116,36 +119,39 @@
 
   <section class="page">
     <h2>2) Architecture for PMS Ingestion and Storage</h2>
+    <div class="callout">
+      <strong>Why this matters:</strong> PMS data is the business backbone. If this layer is unreliable, everything above it becomes unreliable too.
+    </div>
     <h3>Ingestion approach</h3>
     <ul>
-      <li><strong>Connector workers (Python):</strong> one adapter per PMS provider</li>
-      <li><strong>Legacy APIs:</strong> polling + checkpoints + retries + backoff</li>
-      <li><strong>Modern APIs:</strong> webhooks + signature checks + periodic reconciliation</li>
-      <li><strong>Transport:</strong> Kafka topics for durable, replayable event flow</li>
+      <li><strong>Connector workers (Python):</strong> one small service for each PMS provider</li>
+      <li><strong>Legacy APIs:</strong> scheduled polling, checkpoints, retries, and backoff</li>
+      <li><strong>Modern APIs:</strong> webhooks, signature checks, and regular reconciliation</li>
+      <li><strong>Transport:</strong> Kafka topics so events are durable and can be replayed</li>
     </ul>
 
     <h3>Medallion data model</h3>
     <div class="two-col">
       <div class="card">
         <h3>Bronze (Raw)</h3>
-        <p>Immutable source payloads in object storage and raw event topics. This layer is used for auditing and replay.</p>
+        <p>Raw source payloads are stored exactly as they arrive. This makes auditing and replay possible.</p>
       </div>
       <div class="card">
         <h3>Silver (Conformed)</h3>
-        <p>Normalized records with dedupe and policy checks. Canonical tenancy entities live in PostgreSQL; searchable text is indexed in OpenSearch.</p>
+        <p>Data is cleaned, deduplicated, and checked against policy rules. Core tenancy data lives in PostgreSQL and searchable text goes to OpenSearch.</p>
       </div>
     </div>
     <div class="card" style="margin-top:12px;">
       <h3>Gold (Serving)</h3>
-      <p>AI-ready context views combine structured and unstructured data for agent decisions, dashboards, and analytics.</p>
+      <p>Business-ready views combine structured and unstructured data for AI actions, dashboards, and reporting.</p>
     </div>
 
     <h3>Data stores and purpose</h3>
     <ul>
-      <li><strong>PostgreSQL:</strong> source of truth for tenants, tenancies, and actions</li>
-      <li><strong>OpenSearch:</strong> low-latency transcript/message retrieval</li>
-      <li><strong>Object storage:</strong> low-cost raw archives (audio, transcripts, payloads)</li>
-      <li><strong>Redis (optional):</strong> cache, idempotency windows, short-lived coordination state</li>
+      <li><strong>PostgreSQL:</strong> main source of truth for tenants, tenancies, and actions</li>
+      <li><strong>OpenSearch:</strong> fast search across messages and transcripts</li>
+      <li><strong>Object storage:</strong> low-cost storage for raw files, audio, and payloads</li>
+      <li><strong>Redis (optional):</strong> fast cache and short-lived coordination state</li>
     </ul>
 
     <div class="footer">Page 2 of 4</div>
@@ -153,13 +159,16 @@
 
   <section class="page">
     <h2>3) Real-Time Processing and AI Orchestration</h2>
+    <div class="callout">
+      <strong>Why this matters:</strong> Some issues cannot wait for a nightly sync. Urgent messages, calls, and transcript signals may need action within seconds.
+    </div>
     <h3>Live data flow</h3>
     <ul>
-      <li>Messages/calls/webhooks enter a realtime ingest API</li>
-      <li>Events are published to Kafka realtime topics</li>
-      <li>Stream processors enrich events with tenant and conversation context</li>
-      <li>AI workers classify intent, urgency, and next-best action</li>
-      <li>Action engine emits recommendations or triggers approved workflows</li>
+      <li>Messages, calls, and webhooks enter a real-time ingest API</li>
+      <li>Events are sent to Kafka real-time topics</li>
+      <li>Processors add tenant and conversation context</li>
+      <li>AI workers classify intent, urgency, and next best action</li>
+      <li>An action engine sends recommendations or triggers approved workflows</li>
     </ul>
 
     <h3>Airflow + Kubernetes responsibilities</h3>
@@ -168,25 +177,25 @@
         <h3>Airflow</h3>
         <ul>
           <li>Schedules PMS sync and reconciliation jobs</li>
-          <li>Runs controlled backfills</li>
-          <li>Provides operational DAG visibility</li>
+          <li>Runs backfills in a controlled way</li>
+          <li>Gives the team visibility into scheduled workflows</li>
         </ul>
       </div>
       <div class="card">
         <h3>Kubernetes</h3>
         <ul>
-          <li>Runs connector, consumer, and AI worker deployments</li>
-          <li>Autoscaling based on lag and latency</li>
-          <li>Isolates noisy workloads by namespace or pool</li>
+          <li>Runs connector, consumer, and AI worker services</li>
+          <li>Scales workloads up or down based on lag and latency</li>
+          <li>Keeps heavy workloads isolated so one problem does not slow down everything else</li>
         </ul>
       </div>
     </div>
 
     <h3>Performance targets</h3>
     <ul>
-      <li>P95 ingest-to-classification latency under 3 seconds</li>
-      <li>P95 ingest-to-recommendation latency under 8 seconds</li>
-      <li>End-to-end observability across ingest, transform, and AI actions</li>
+      <li>95% of ingest-to-classification events should finish in under 3 seconds</li>
+      <li>95% of ingest-to-recommendation events should finish in under 8 seconds</li>
+      <li>The full path should be measurable from ingest to AI action</li>
     </ul>
 
     <div class="footer">Page 3 of 4</div>
@@ -194,32 +203,34 @@
 
   <section class="page">
     <h2>4) Compliance, Benchmarking, and Scale Plan</h2>
+    <div class="callout">
+      <strong>Why this matters:</strong> A system is not production-ready if it is fast but unsafe, or smart but too expensive to run.
+    </div>
     <h3>Compliance and governance (current offering)</h3>
     <ul>
       <li>Encryption in transit and at rest</li>
-      <li>Tenant-scoped access patterns and auditability</li>
+      <li>Tenant-level access controls and audit trails</li>
       <li>PII-aware prompt handling with masking rules</li>
-      <li>Retention policy by data class (events, transcripts, raw media)</li>
+      <li>Retention rules by data type such as events, transcripts, and raw media</li>
     </ul>
 
     <h3>AI quality and safety benchmarking</h3>
     <ul>
-      <li><strong>Offline:</strong> precision/recall/F1, ranking quality, safety violation rate</li>
-      <li><strong>Online:</strong> shadow mode, A/B tests, resolution and escalation impact</li>
-      <li><strong>Operations:</strong> latency, model cost per resolved case, drift indicators</li>
+      <li><strong>Offline:</strong> measure accuracy, ranking quality, and safety issues</li>
+      <li><strong>Online:</strong> use shadow mode and controlled tests before full rollout</li>
+      <li><strong>Operations:</strong> track speed, model cost per case, and drift over time</li>
     </ul>
 
     <h3>Scale interventions (when to act)</h3>
     <ul>
-      <li>Add consumers when queue lag is sustained beyond threshold</li>
-      <li>Add Redis when repeated hot reads impact user-facing latency</li>
-      <li>Partition high-volume tables and move cold data to cheaper storage</li>
-      <li>Adopt dedicated vector infrastructure when semantic retrieval latency grows</li>
+      <li>Add more consumers when queue lag stays too high for too long</li>
+      <li>Add Redis when repeated hot reads start slowing user-facing requests</li>
+      <li>Split high-volume tables and move older data to cheaper storage</li>
+      <li>Adopt dedicated vector infrastructure when semantic search becomes too slow</li>
     </ul>
 
     <div class="callout">
-      <strong>Implementation posture:</strong> Startup-practical by default, production-safe by design,
-      and explicitly measurable through latency, quality, and cost KPIs.
+      <strong>Implementation posture:</strong> Start simple, keep it safe, measure everything important, and scale only when the data shows it is necessary.
     </div>
 
     <div class="footer">Page 4 of 4</div>
