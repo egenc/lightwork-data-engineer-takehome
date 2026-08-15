@@ -1,0 +1,30 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 3,
+      "number_of_replicas": 1,
+      "refresh_interval": "5s"
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "event_id": { "type": "keyword" },
+      "tenant_id": { "type": "keyword" },
+      "thread_id": { "type": "keyword" },
+      "channel": { "type": "keyword" },
+      "event_type": { "type": "keyword" },
+      "occurred_at": { "type": "date" },
+      "urgency": { "type": "keyword" },
+      "speaker": { "type": "keyword" },
+      "text": {
+        "type": "text",
+        "fields": {
+          "raw": { "type": "keyword", "ignore_above": 256 }
+        }
+      },
+      "labels": { "type": "keyword" },
+      "pii_masked": { "type": "boolean" }
+    }
+  }
+}

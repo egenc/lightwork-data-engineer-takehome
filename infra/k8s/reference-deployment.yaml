@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pms-connector-worker
+  labels:
+    app: pms-connector-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pms-connector-worker
+  template:
+    metadata:
+      labels:
+        app: pms-connector-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/example/lightwork-connector:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_LEVEL
+              value: info
+            - name: BROKER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: data-platform-secrets
+                  key: broker_url
+            - name: PMS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: data-platform-secrets
+                  key: pms_api_token
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pms-connector-worker-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pms-connector-worker
+  minReplicas: 2
+  maxReplicas: 12
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: queue_lag
+        target:
+          type: AverageValue
+          averageValue: "200"
