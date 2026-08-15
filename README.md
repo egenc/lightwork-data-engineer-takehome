@@ -201,6 +201,9 @@ flowchart TB
   subgraph KubernetesCluster[Kubernetes Cluster]
     connectorDeploy[Connector Worker Deployment]
     streamConsumerDeploy[Stream Consumer Deployment]
+    realtimeIngest[Realtime Ingest API Gateway]
+    transcriptProcessor[Transcript and Event Processor]
+    realtimeActionEngine[Realtime Action Engine]
     aiWorkerDeploy[AI Enrichment Worker Deployment]
     hpa[Horizontal Pod Autoscaler]
     cronJobs[Kubernetes CronJobs]
@@ -208,6 +211,8 @@ flowchart TB
 
   subgraph DataServices[Managed Data Services]
     kafka[Kafka]
+    realtimeTopics[(Kafka Realtime Topics)]
+    batchTopics[(Kafka Batch and Sync Topics)]
     postgres[PostgreSQL]
     opensearch[OpenSearch]
     redis[Redis Optional]
@@ -216,8 +221,9 @@ flowchart TB
 
   subgraph InputsAndOps[External Inputs and Monitoring]
     pmsApis[PMS APIs]
-    webhookInput[Webhook and Realtime Input]
+    webhookInput[Messages, Calls, and Realtime Webhooks]
     observability[OpenTelemetry + Prometheus + Grafana]
+    productActions[Product Actions and Notifications]
   end
 
   airflow --> cronJobs
@@ -225,25 +231,45 @@ flowchart TB
   airflow --> streamConsumerDeploy
 
   pmsApis --> connectorDeploy
-  webhookInput --> streamConsumerDeploy
+  webhookInput --> realtimeIngest
+  realtimeIngest --> realtimeTopics
 
-  connectorDeploy --> kafka
+  connectorDeploy --> batchTopics
   connectorDeploy --> objectStore
-  streamConsumerDeploy --> kafka
+  streamConsumerDeploy --> batchTopics
+  transcriptProcessor --> realtimeTopics
+  streamConsumerDeploy --> realtimeTopics
+  realtimeTopics --> transcriptProcessor
+  realtimeTopics --> realtimeActionEngine
+  batchTopics --> kafka
+  realtimeTopics --> kafka
+
   streamConsumerDeploy --> postgres
   streamConsumerDeploy --> opensearch
   streamConsumerDeploy --> redis
+  transcriptProcessor --> postgres
+  transcriptProcessor --> opensearch
+  transcriptProcessor --> redis
+  realtimeActionEngine --> redis
+  realtimeActionEngine --> productActions
+
   aiWorkerDeploy --> postgres
   aiWorkerDeploy --> opensearch
   aiWorkerDeploy --> redis
+  aiWorkerDeploy --> realtimeActionEngine
 
   kafka --> hpa
   hpa --> connectorDeploy
   hpa --> streamConsumerDeploy
+  hpa --> transcriptProcessor
+  hpa --> realtimeActionEngine
   hpa --> aiWorkerDeploy
 
   connectorDeploy --> observability
+  realtimeIngest --> observability
   streamConsumerDeploy --> observability
+  transcriptProcessor --> observability
+  realtimeActionEngine --> observability
   aiWorkerDeploy --> observability
   airflow --> observability
 ```
