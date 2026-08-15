@@ -19,10 +19,11 @@
       background: #fff;
     }
     .page {
+      position: relative;
       page-break-after: always;
-      min-height: calc(297mm - 36mm);
-      display: flex;
-      flex-direction: column;
+      height: calc(297mm - 36mm);
+      overflow: hidden;
+      padding-bottom: 14mm;
     }
     .page:last-child { page-break-after: auto; }
     h1, h2, h3 { margin: 0 0 10px; color: #0f172a; }
@@ -57,7 +58,10 @@
       background: #fff;
     }
     .footer {
-      margin-top: auto;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
       padding-top: 10px;
       font-size: 9.5pt;
       color: #475569;
